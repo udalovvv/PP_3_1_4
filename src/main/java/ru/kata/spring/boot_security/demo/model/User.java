@@ -6,7 +6,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
+import java.util.List;
 
 @Entity
 @Table(name = "user")
@@ -22,8 +24,8 @@ public class User implements UserDetails {
     @Column(name = "lastName")
     private String lastName;
 
-    @Column(name = "email")
-    private String email;
+//    @Column(name = "email")
+//    private String email;
 
     @Column(name = "username")
     private String username;
@@ -31,16 +33,27 @@ public class User implements UserDetails {
     @Column(name = "password")
     private String password;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    private Set<Role> roles;
+//    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany
+    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"))
+    private List<Role> roles;
 
     public User() {}
 
-    public User(String firstName, String lastName, String email) {
+    public User(String firstName, String lastName, String username, String password, List<Role> roles) {
         this.firstName = firstName;
         this.lastName = lastName;
-        this.email = email;
+        this.username = username;
+        this.password = password;
+        this.roles = roles;
+//        roles.forEach(role -> role.setUsers(Collections.singletonList(this)));
     }
+//    public User(String firstName, String lastName, String email) {
+//        this.firstName = firstName;
+//        this.lastName = lastName;
+////        this.email = email;
+//    }
 
     public Long getId() {
         return id;
@@ -66,23 +79,23 @@ public class User implements UserDetails {
         this.lastName = lastName;
     }
 
-    public String getEmail() {
-        return email;
-    }
+//    public String getEmail() {
+//        return email;
+//    }
+//
+//    public void setEmail(String email) {
+//        this.email = email;
+//    }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
 
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", email='" + email + '\'' +
-                '}';
-    }
+//    @Override
+//    public String toString() {
+//        return "User{" +
+//                "firstName='" + firstName + '\'' +
+//                ", lastName='" + lastName + '\'' +
+//                ", email='" + email + '\'' +
+//                '}';
+//    }
 
 
     public void setUsername(String username) {
@@ -93,11 +106,11 @@ public class User implements UserDetails {
         this.password = password;
     }
 
-    public Set<Role> getRoles() {
+    public List<Role> getRoles() {
         return roles;
     }
 
-    public void setRoles(Set<Role> roles) {
+    public void setRoles(List<Role> roles) {
         this.roles = roles;
     }
 

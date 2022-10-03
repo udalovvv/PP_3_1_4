@@ -1,86 +1,86 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="ISO-8859-1">
-    <title>CRUD APP</title>
-    <link rel="stylesheet"
-          href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
-          crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <title>Admin panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <style>
+        .navbar-text#logoutBtn {
+            --bs-btn-hover-color: #e3e2e2;
+            --bs-btn-active-border-color: #343a40;
+            --bs-btn-active-color: #e3e2e2;
+        }
+        body {
+            background-color: #f8faf9;
+        }
+    </style>
 </head>
 <body>
 
 
-
-<nav class="navbar navbar-expand-md bg-dark navbar-dark">
-    <!-- Brand -->
-    <a class="navbar-brand" href="#">Student Management System</a>
-
-    <!-- Toggler/collapsibe Button -->
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <!-- Navbar links -->
-    <div class="collapse navbar-collapse" id="collapsibleNavbar">
-        <ul class="navbar-nav">
-            <li class="nav-item">
-                <a class="nav-link" th:href="@{/user}">Student Management</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" th:href="@{/admin}">Teacher Management</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" th:href="@{/logout}">LogOut</a>
-            </li>
-        </ul>
+<!--Навигационная панель-->
+<nav class="navbar navbar-dark" style="background-color: #343a40">
+    <div class="container-fluid">
+        <span class="navbar-brand">
+            <b th:text="${user.getUsername()}">Username</b>
+            with roles:
+            <span th:each="role : ${user.getAuthorities()}">
+                <span th:text="${#strings.substring(role.authority, 5)}"></span>
+            </span>
+        </span>
+        <a th:href="@{/logout}" class="navbar-text btn" id="logoutBtn">Logout</a>
     </div>
 </nav>
+<div class="container-fluid">
+    <div class="row">
 
+        <!--Боковая панель ролей-->
+        <div class="col-2 bg-white" style="height: 100vh">
+            <div class="nav flex-column nav-pills mt-3">
+                <button class="nav-link text-start active" data-bs-toggle="tab" data-bs-target="#userPanel">User</button>
+            </div>
+        </div>
+        <div class="col-10">
+            <div class="tab-content">
 
-
-
-<div class ="container">
-
-    <table class = "table table-striped table-bordered">
-        <thead class = "table-dark">
-        <tr>
-            <th> User First Name</th>
-            <th> User Last Name</th>
-            <th> User Email </th>
-<!--            <th> Actions </th>-->
-        </tr>
-        </thead>
-
-        <tbody>
-<!--            <tr>-->
-<!--                <td th:text = "${user.getFirstName()}"></td>&ndash;&gt;-->
-<!--                <td th:text = "${user.getLastName()}"></td>&ndash;&gt;-->
-<!--                <td th:text = "${user.getEmail()}"></td>&ndash;&gt;-->
-<!--            </tr>-->
-<!--        <tr th:each = "user: ${user}">-->
-<!--            <td th:text = "${user.firstName}"></td>-->
-<!--            <td th:text = "${user.lastName}"></td>-->
-<!--            <td th:text = "${user.email}"></td>-->
-<!--            <td>-->
-<!--                <a th:href = "@{/admin/{id}/edit(id=${user.id})}"-->
-<!--                   class = "btn btn-primary">Update</a>-->
-
-<!--                <a th:href = "@{/admin/{id}(id=${user.id})}"-->
-<!--                   class = "btn btn-danger">Delete</a>-->
-
-<!--            </td>-->
-<!--        </tr>-->
-        </tbody>
-
-    </table>
-
-<!--    <div class = "row">-->
-<!--        <div class = "col-lg-3">-->
-<!--            <a th:href = "@{/admin/new}" class = "btn btn-primary btn-sm mb-3"> Add User</a>-->
-<!--        </div>-->
-<!--    </div>-->
-
+                <!--Панель юзера-->
+                <div class="tab-pane active mx-3" id="userPanel">
+                    <h2 class="my-3">User information page</h2>
+                    <div class="card">
+                        <div class="card-header"><h5 class="my-1">About user</h5></div>
+                        <div class="card-body">
+                            <hr class="my-1">
+                            <table class="table table-striped">
+                                <thead>
+                                <tr>
+                                    <th scope="row">ID</th>
+                                    <th scope="row">First name</th>
+                                    <th scope="row">Last name</th>
+                                    <th scope="row">Email</th>
+                                    <th scope="row">Role</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td th:text = "${user.id}" class="align-middle">ID</td>
+                                    <td th:text = "${user.firstName}" class="align-middle">Name</td>
+                                    <td th:text = "${user.lastName}" class="align-middle">Surname</td>
+                                    <td th:text = "${user.username}" class="align-middle">Email</td>
+                                    <td class="align-middle">
+                                        <div th:each="role : ${user.roles}">
+                                            <span th:text="${#strings.substring(role.getRole(), 5)}"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
 </body>
 </html>

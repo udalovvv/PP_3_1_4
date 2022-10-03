@@ -1,27 +1,37 @@
 package ru.kata.spring.boot_security.demo.service;
 
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.repositories.UserRepository;
 
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
-public class UserServiceImpl implements UserService, UserDetailsService {
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
+    private final PasswordEncoder passwordEncoder;
+
+    private final RoleService roleService;
+
     @Autowired
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleService roleService) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.roleService = roleService;
     }
 
     @Override
@@ -38,6 +48,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Transactional
     @Override
     public void save(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        List<Role> userRoles = user.getRoles().stream().map(role -> roleService.findRoleByRole(role.getRole()))
+                .collect(Collectors.toList());
+        user.setRoles(userRoles);
         userRepository.save(user);
     }
 
@@ -45,7 +59,12 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Override
     public void update(long id, User updatedUser) {
         updatedUser.setId(id);
-        userRepository.save(updatedUser);
+        if (showUser(id).getPassword().equals(updatedUser.getPassword())) {
+            userRepository.save(updatedUser);
+        } else {
+            save(updatedUser);
+        }
+
     }
 
     @Transactional
@@ -54,55 +73,15 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         userRepository.deleteById(id);
     }
 
-
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found");
-        }
-
-        return user;
+    public UserDetails findByUsername(String username) throws UsernameNotFoundException {
+        Optional<User> optionalUser = userRepository.findByUsername(username);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            Hibernate.initialize(user.getRoles());
+            return user;
+        } else
+            return null;
     }
-
-
-//    private final UserDao userDao;
-//
-//    @Autowired
-//    public UserServiceImpl(UserDao userDao) {
-//        System.out.println("!!!");
-//        this.userDao = userDao;
-//    }
-//
-////    @Transactional(readOnly = true)
-//    @Override
-//    public List<User> showAll() {
-//        System.out.println(userDao.showAll());
-//        return userDao.showAll();
-//    }
-//
-//    @Transactional
-//    @Override
-//    public void save(User user) {
-//        userDao.save(user);
-//    }
-//
-////    @Transactional(readOnly = true)
-//    @Override
-//    public User showUser(long id) {
-//        return userDao.showUser(id);
-//    }
-//    @Transactional
-//    @Override
-//    public void update(long id, User updatedUser) {
-//        userDao.update(id, updatedUser);
-//    }
-//
-//
-//    @Transactional
-//    @Override
-//    public void delete(long id) {userDao.delete(id);}
-
 
 }
