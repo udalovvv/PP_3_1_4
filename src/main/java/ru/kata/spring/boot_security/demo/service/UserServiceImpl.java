@@ -1,87 +1,76 @@
 package ru.kata.spring.boot_security.demo.service;
 
-import org.hibernate.Hibernate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.repositories.UserRepository;
 
-
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
-@Transactional(readOnly = true)
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService{
 
     private final UserRepository userRepository;
 
-    private final PasswordEncoder passwordEncoder;
+    private final RoleServiceImpl roleService;
 
-    private final RoleService roleService;
-
-    @Autowired
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleService roleService) {
+    public UserServiceImpl(UserRepository userRepository, RoleServiceImpl roleService) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
         this.roleService = roleService;
     }
 
     @Override
-    public List<User> showAll() {
+    @Transactional(readOnly = true)
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> findAllUsers() {
         return userRepository.findAll();
     }
 
     @Override
-    public User showUser(long id) {
-        Optional<User> foundUser = userRepository.findById(id);
-        return foundUser.orElse(null);
-    }
-
     @Transactional
-    @Override
-    public void save(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        List<Role> userRoles = user.getRoles().stream().map(role -> roleService.findRoleByRole(role.getRole()))
-                .collect(Collectors.toList());
-        user.setRoles(userRoles);
+    public void saveUser(User user) {
+        user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
         userRepository.save(user);
     }
 
-    @Transactional
     @Override
-    public void update(long id, User updatedUser) {
-        updatedUser.setId(id);
-        if (showUser(id).getPassword().equals(updatedUser.getPassword())) {
-            userRepository.save(updatedUser);
-        } else {
-            save(updatedUser);
-        }
-
+    @Transactional(readOnly = true)
+    public User findByIdUsers(Long id) {
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("Пользователь не найден"));
     }
 
-    @Transactional
     @Override
-    public void delete(long id) {
+    @Transactional
+    public void updateUser(Long id, User user) {
+        user.setId(id);
+        user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteByIdUsers(Long id) {
         userRepository.deleteById(id);
     }
 
     @Override
-    public UserDetails findByUsername(String username) throws UsernameNotFoundException {
-        Optional<User> optionalUser = userRepository.findByUsername(username);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            Hibernate.initialize(user.getRoles());
-            return user;
-        } else
-            return null;
+    @Transactional(propagation = Propagation.NEVER)
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = findByEmail(email);
+        if(user == null) {
+            throw new UsernameNotFoundException(String.format("User '%s' not found", email));
+        }
+        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(),
+                roleService.mapRolesToAuthorities(user.getRoles()));
     }
 
 }
